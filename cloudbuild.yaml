@@ -1,0 +1,29 @@
+steps:
+
+  # 1. Validate Helm chart
+  - name: 'alpine/helm:3.19.0'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        helm lint helm/notes-app
+
+  # 2. Render Helm chart into Kubernetes manifests
+  - name: 'alpine/helm:3.19.0'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        helm template notes-app helm/notes-app > rendered.yaml
+
+  # 3. Deploy rendered manifests to GKE
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - 'run'
+      - '--filename=rendered.yaml'
+      - '--location=${_GKE_LOCATION}'
+      - '--cluster=${_GKE_CLUSTER}'
+
+substitutions:
+  _GKE_CLUSTER: 'autopilot-cluster-1'
+  _GKE_LOCATION: 'us-central1'
